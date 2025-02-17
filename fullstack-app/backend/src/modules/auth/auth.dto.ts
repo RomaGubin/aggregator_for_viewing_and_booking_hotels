@@ -15,7 +15,7 @@ export class RegisterDto {
   @IsString()
   role: string;
 
-  @IsOptional()  // Указание, что телефон необязателен
+  @IsOptional()
 
   contactPhone?: string;
 }

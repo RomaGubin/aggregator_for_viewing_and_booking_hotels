@@ -10,7 +10,7 @@
 // });
 
 // export default socket;
-
+//websocket.js
 import { io } from 'socket.io-client';
 
 //URL бэкенд-сервера

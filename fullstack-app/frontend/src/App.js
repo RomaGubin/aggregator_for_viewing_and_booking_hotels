@@ -1,5 +1,5 @@
 //App.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import SearchRoom from './pages/SearchNamber';
 import AllHotel from './pages/AllHotel';
@@ -7,7 +7,11 @@ import AddHotel from './pages/AddHotel';
 import ChatIcon from './pages/ChatIcon';
 import Profile from './pages/Profile';
 import Users from './pages/Users';
+import User from './pages/User';
 import EditHotel from './pages/EditHotel';
+import Hotel from './pages/Hotel';
+import AddRoom from './pages/AddRoom';
+import EditRoom from './pages/EditRoom';
 import ProtectedRoute from './pages/ProtectedRoute';
 import LoginRegistrationForm from './pages/LoginRegistrationForm';
 import ArrowRightIcon from './img/Arrow - Right 2.png';
@@ -37,7 +41,7 @@ const styles = {
   },
   rightColumn: {
     flex: '1',
-    maxWidth: '100%',
+    maxWidth: '900px',
     padding: '0 20px',
     borderRadius: '8px',
     boxSizing: 'border-box',
@@ -160,6 +164,8 @@ const styles = {
     transition: 'border-color 0.3s',
   },
   searchButton: {
+    display: 'flex',
+    alignItems: 'center',
     width: 'auto',
     padding: '0 16px',
     height: '44px',
@@ -219,17 +225,104 @@ const styles = {
     marginTop: '20px',
     textAlign: 'left',
   },
+  hotelContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden',
+    padding: '10px',
+  },
+  hotelImageContainer: {
+    width: '200px',
+    height: '150px',
+    marginRight: '20px',
+  },
+  hotelImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: '8px',
+  },
+  hotelInfoContainer: {
+    flex: 1,
+  },
+  mainImageContainer: {
+    width: '100%',
+    height: '400px',
+    overflow: 'hidden',
+    borderRadius: '8px',
+  },
+  mainImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  thumbnailContainer: {
+    display: 'flex',
+    gap: '10px',
+    overflowX: 'auto',
+    padding: '10px 0',
+    maxWidth: '100%',
+    '&::-webkit-scrollbar': {
+      height: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: '#f1f1f1',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: '#888',
+      borderRadius: '4px',
+    },
+  },
+  thumbnail: {
+    width: '100px',
+    height: '100px',
+    objectFit: 'cover',
+    borderRadius: '4px',
+    flexShrink: 0,
+  },
+  infoContainer: {
+    padding: '20px',
+  },
+  description: {
+    fontSize: '1.1rem',
+    lineHeight: '1.6',
+    color: '#666',
+    marginBottom: '30px'
+  },
+  buttonGroup: {
+    display: 'flex',
+    gap: '15px'
+  },
 };
-
-const isAuthenticated = !!localStorage.getItem('jwtToken');
-console.log("isAuthenticated:", isAuthenticated);
 
 const App = () => {
   const isAuthenticated = !!localStorage.getItem('jwtToken');
+  const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) return;
+    fetch('http://localhost:3000/auth/profile', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    .then((response) => {
+      if (response.status === 401) {
+        return
+      } else {
+        return response.json();
+      }
+    })
+    .then((data) => {
+      setUser(data);
+    });
+  }, []);
+
+  console.log("isAuthenticated:", isAuthenticated);
   return (
     <div style={styles.container}>
-      {/* Левый столбик */}
       <div style={styles.leftColumn}>
         <div style={styles.logoContainer}>
           <Link to="/" style={styles.logo}>logo</Link>
@@ -261,7 +354,7 @@ const App = () => {
                   </div>
                 </Link>
               </li>
-              {isAuthenticated && (
+              {isAuthenticated && user?.role === 'admin' && (
                 <li style={styles.navItem}>
                   <Link to="/users" style={styles.navLink}>
                     <div style={styles.navItemContent}>
@@ -276,7 +369,6 @@ const App = () => {
         </div>
       </div>
 
-      {/* Правый столбик */}
       <div style={styles.rightColumn}>
         <div style={styles.header}>
           <div></div>
@@ -304,15 +396,30 @@ const App = () => {
           <Route path="/add-hotel" element={<AddHotel styles={styles} />} />
           <Route path="/login" element={<LoginRegistrationForm styles={styles} />} />
           <Route path="/users" element={<Users styles={styles} />} />
-          <Route path="/edit-hotel" element={<EditHotel styles={styles} />} />
+          <Route path="/hotel/:id" element={<Hotel styles={styles} />} />
+          <Route path="/hotel/:id/edit" element={<EditHotel styles={styles} />} />
+          <Route path="/hotel/:id/add-room" element={<AddRoom styles={styles} />} />
+          <Route path="/hotel/:hotelId/edit-room/:roomId" element={<EditRoom styles={styles} />} />
           <Route path="/profile" element={
               <ProtectedRoute isAuthenticated={isAuthenticated}>
                 <Profile styles={styles} />
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/user/:userId" 
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <User styles={styles} />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<SearchRoom styles={styles} />} />
-          <Route path="/search-room" element={<SearchRoom styles={styles} />} />
+          <Route 
+            path="/search-room" 
+            element={<SearchRoom styles={styles} isAuthenticated={isAuthenticated} />} 
+          />
+          <Route path="/users" element={<Users styles={styles} userRole={user?.role} />} />
         </Routes>
       </div>
       <ChatIcon styles={styles.chatIcon} />

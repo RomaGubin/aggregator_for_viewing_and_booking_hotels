@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.entity';
 import * as bcrypt from 'bcrypt';
+import * as mongoose from 'mongoose';
 
 @Injectable()
 export class UsersService {
@@ -13,17 +14,50 @@ export class UsersService {
     return this.userModel.findOne({ email }).exec();
   }
 
-  async findAll(offset: number, limit: number, filters: { name?: string; email?: string; contactPhone?: string }) {
-    const query = this.userModel.find();
-
-    if (filters.name) query.where('name').regex(new RegExp(filters.name, 'i'));
-    if (filters.email) query.where('email').regex(new RegExp(filters.email, 'i'));
-    if (filters.contactPhone) query.where('contactPhone').regex(new RegExp(filters.contactPhone, 'i'));
-
-    const totalCount = await this.userModel.countDocuments(query);
-    const users = await query.skip(offset).limit(limit).exec();
-
-    return { users, totalCount };
+  async findAll(offset: number, limit: number, search?: string) {
+    try {
+      const query: any = {};
+      
+      if (search?.trim()) {
+        const searchTerm = search.trim();
+        const searchConditions = [];
+        
+        searchConditions.push(
+          { name: { $regex: searchTerm, $options: 'i' } },
+          { email: { $regex: searchTerm, $options: 'i' } }
+        );
+  
+        if (/^[0-9+]+$/.test(searchTerm)) {
+          searchConditions.push(
+            { contactPhone: { $regex: searchTerm, $options: 'i' } }
+          );
+        }
+  
+        if (mongoose.Types.ObjectId.isValid(searchTerm)) {
+          searchConditions.push({ 
+            _id: new mongoose.Types.ObjectId(searchTerm) 
+          });
+        }
+  
+        query.$or = searchConditions;
+      }
+  
+      const [users, totalCount] = await Promise.all([
+        this.userModel.find(query)
+          .skip(offset)
+          .limit(limit)
+          .select('_id name email contactPhone role')
+          .lean()
+          .exec(),
+          
+        this.userModel.countDocuments(query)
+      ]);
+  
+      return { users, totalCount };
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Ошибка при выполнении запроса');
+    }
   }
 
   async register(registerDto: { email: string; password: string; name: string; role: string; contactPhone: string }) {
@@ -51,5 +85,9 @@ export class UsersService {
       throw new Error('Пользователь с таким email не найден');
     }
     console.log(`Пользователь с email ${email} был удалён.`);
+  }
+
+  async findUserById(id: string): Promise<User> {
+    return this.userModel.findById(id).select('-password').exec();
   }
 }

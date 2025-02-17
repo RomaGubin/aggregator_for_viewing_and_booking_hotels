@@ -1,6 +1,6 @@
 // adminInit.service.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { UsersService } from '../users/users.service';  // Импортируем сервис пользователей
+import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -9,7 +9,6 @@ export class AdminInitService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      // Проверка, существует ли уже администратор
       const existingAdmin = await this.usersService.findByEmail('admin@example.com');
       if (existingAdmin) {
         console.log('Администратор уже существует.');
@@ -17,7 +16,6 @@ export class AdminInitService implements OnModuleInit {
       }
 
       const hashedPassword = await bcrypt.hash('defaultPassword', 10);
-
       const adminUser = {
         email: 'admin@example.com',
         password: hashedPassword,
@@ -26,12 +24,10 @@ export class AdminInitService implements OnModuleInit {
         role: 'admin',
       };
 
-      // Регистрируем нового администратора
       await this.usersService.register(adminUser);
       console.log('Новый администратор создан с паролем по умолчанию.');
-
     } catch (error) {
-      console.error('Ошибка при инициализации администратора:', error.message);
+      console.error('Ошибка при инициализации администратора:', error);
     }
   }
 }

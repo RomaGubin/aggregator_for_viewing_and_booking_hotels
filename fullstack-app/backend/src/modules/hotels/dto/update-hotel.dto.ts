@@ -1,4 +1,5 @@
+//update-hotel.dto.ts
 export class UpdateHotelDto {
-  title: string;
+  name: string;
   description: string;
 }

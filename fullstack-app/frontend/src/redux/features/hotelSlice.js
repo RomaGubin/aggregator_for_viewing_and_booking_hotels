@@ -1,3 +1,4 @@
+//hotelSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const fetchHotels = createAsyncThunk('hotels/fetchHotels', async () => {

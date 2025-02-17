@@ -1,3 +1,4 @@
+//hotel.entity.ts
 export class Hotel {
   id: number;
   name: string;

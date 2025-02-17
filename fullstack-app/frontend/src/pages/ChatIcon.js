@@ -1,3 +1,4 @@
+//ChatIcon.js
 import React, { useState } from 'react';
 import Chat from './Chat';
 import IconUser from '../img/chat 1.png';
@@ -7,7 +8,6 @@ const ChatIcon = () => {
 
   return (
     <div>
-      {/* Иконка чата */}
       <img
         src={IconUser}
         alt="Chat Icon"
@@ -23,7 +23,6 @@ const ChatIcon = () => {
         onClick={() => setIsChatOpen(true)}
       />
 
-      {/* Форма чата */}
       {isChatOpen && (
         <div
           style={{

@@ -19,20 +19,19 @@ WebSocket
 [frontend-url]: http://localhost:3001
 
 
-## Далее общая информация для меня, решил пока не убирать
+Адмиин:
 
-# Метод: DELETE
-URL: http://localhost:3000/users/delete
 {
-  "email": "admin@example.com"
+  "email": "popa@example.com",
+  "password": "$2b$10$nZJywQXBZJy3evRpg.hN9uhnBO9fItOY9BsiPdZrVTDOmAjBNdQzC",
+  "name": "popa",
+  "role": "admin",
+  "contactPhone": "89775678966",
+  "createdAt": {
+    "$date": "2025-02-16T19:17:09.321Z"
+  },
+  "updatedAt": {
+    "$date": "2025-02-16T19:17:09.321Z"
+  },
+  "__v": 0
 }
-# Метод: POST
-http://localhost:3000/users/register
-{
-  "email": "admin@example.com",
-  "password": "adminPassword",
-  "name": "Admin User",
-  "role": "admin"
-}
-# Метод: GET (покажет всех пользователей)
-http://localhost:3000/users

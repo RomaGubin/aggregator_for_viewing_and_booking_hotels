@@ -2,8 +2,10 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ isAuthenticated, children, redirectPath = '/login' }) => {
-  if (!isAuthenticated) {
+const ProtectedRoute = ({ isAuthenticated, requiredRole, children, redirectPath = '/login' }) => {
+  const userRole = localStorage.getItem('userRole'); // Получение роли
+
+  if (!isAuthenticated || (requiredRole && userRole !== requiredRole)) {
     return <Navigate to={redirectPath} replace />;
   }
 

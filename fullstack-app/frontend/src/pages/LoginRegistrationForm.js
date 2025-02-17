@@ -5,7 +5,7 @@ import { setCredentials } from '../redux/features/authSlice';
 import axios from 'axios';
 
 const LoginRegistrationForm = ({ styles }) => {
-  const [formData, setFormData] = useState({ username: '', password: '', confirmPassword: '', name: '', phone: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', name: '', contactPhone: '' });
   const [isRegister, setIsRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -16,7 +16,6 @@ const LoginRegistrationForm = ({ styles }) => {
     e.preventDefault();
     setIsLoading(true);
   
-    // Проверка совпадения паролей при регистрации
     if (isRegister && formData.password !== formData.confirmPassword) {
       alert('Пароли не совпадают');
       setIsLoading(false);
@@ -27,18 +26,18 @@ const LoginRegistrationForm = ({ styles }) => {
       const endpoint = isRegister ? '/auth/register' : '/auth/login';
       const requestData = isRegister
         ? {
-            email: formData.username,
+            email: formData.email,
             password: formData.password,
             name: formData.name,
             role: 'user',
           }
         : {
-            email: formData.username,
+            email: formData.email,
             password: formData.password,
           };
   
-      if (formData.phone) {
-        requestData.phone = formData.phone;
+      if (formData.contactPhone) {
+        requestData.contactPhone = formData.contactPhone;
       }
   
       const { data } = await axios.post(`http://localhost:3000${endpoint}`, requestData);
@@ -103,10 +102,10 @@ const LoginRegistrationForm = ({ styles }) => {
       <form onSubmit={handleSubmit}>
         <div style={styles.formGroup}>
           <input
-            type="text"
+            type="email"
             placeholder="Введите email"
-            value={formData.username}
-            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             style={styles.input}
           />
         </div>
@@ -126,8 +125,8 @@ const LoginRegistrationForm = ({ styles }) => {
               <input
                 type="text"
                 placeholder="Введите номер телефона"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                value={formData.contactPhone}
+                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
                 style={styles.input}
               />
             </div>

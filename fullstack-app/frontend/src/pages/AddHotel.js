@@ -1,29 +1,59 @@
 //AddHotel.js
 import React, { useState } from 'react';
 
+
 const AddHotel = ({ styles }) => {
   const [images, setImages] = useState([]);
   const [hotelName, setHotelName] = useState('');
   const [hotelDescription, setHotelDescription] = useState('');
 
+  
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     setImages([...images, ...files]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+      console.error('Токен отсутствует в localStorage!');
+    } else {
+      console.log('Токен перед отправкой запроса:', token);
+    }
+
+    if (!hotelName.trim()) {
+      alert('Введите название отеля');
+      return;
+    }
+
+    if (!hotelDescription.trim()) {
+      alert('Введите описание отеля');
+      return;
+    }
 
     const formData = new FormData();
     images.forEach((image, index) => {
-      formData.append(`image_${index}`, image);
+      formData.append('images', image);
     });
-    formData.append('title', hotelName);
+    formData.append('name', hotelName);
     formData.append('description', hotelDescription);
+    
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+  
+    console.log('Отправляемые заголовки:', headers);
 
-    fetch('/api/admin/hotels', {
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    fetch('http://localhost:3000/hotels', {
       method: 'POST',
       body: formData,
+      headers, // Передаем заголовки с токеном
     })
       .then((response) => response.json())
       .then((data) => {
@@ -52,7 +82,6 @@ const AddHotel = ({ styles }) => {
       <div style={styles.searchContainer}>
         <h2 style={styles.h2}>Добавить гостиницу</h2>
         <form onSubmit={handleSubmit}>
-          {/* Загрузка изображений */}
           <div style={styles.formGroup}>
             <h3 style={styles.h3}>Добавить изображения</h3>
             <input
@@ -63,7 +92,6 @@ const AddHotel = ({ styles }) => {
               style={styles.input}
             />
           </div>
-          {/* Предпросмотр загруженных изображений */}
           <div style={styles.formGroup}>
             {images.length > 0 && (
               <div>
@@ -81,7 +109,6 @@ const AddHotel = ({ styles }) => {
               </div>
             )}
           </div>
-          {/* Название отеля */}
           <div style={styles.formGroup}>
             <h3 style={styles.h3}>Название гостиницы</h3>
             <input
@@ -92,7 +119,6 @@ const AddHotel = ({ styles }) => {
               style={styles.input}
             />
           </div>
-          {/* Описание отеля */}
           <div style={styles.formGroup}>
             <h3 style={styles.h3}>Описание гостиницы</h3>
             <textarea
@@ -106,6 +132,7 @@ const AddHotel = ({ styles }) => {
               }}
             />
           </div>
+          <div style={{display: 'flex'}}>
           <button type="submit" style={styles.searchButton}>
             Добавить
           </button>
@@ -118,8 +145,8 @@ const AddHotel = ({ styles }) => {
               }}>
               Отменить
             </button>
-          )}
-
+            )}
+          </div>
         </form>
       </div>
     </div>

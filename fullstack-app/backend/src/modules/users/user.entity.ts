@@ -2,43 +2,48 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as mongoose from 'mongoose';
 
 export type UserDocument = User & Document;
 
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-}
-
-@Schema()
+@Schema({ timestamps: true })
 export class User {
-  @Prop({ required: true, unique: true })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    default: () => new mongoose.Types.ObjectId(),
+  })
+  _id: mongoose.Schema.Types.ObjectId;
+
+  @Prop({ required: true, unique: true, index: true })
   email: string;
 
   @Prop({ required: true })
   password: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: true })
   name: string;
 
-  @Prop({ default: UserRole.USER })
-  role: UserRole;
+  @Prop({ default: 'user', index: true })
+  role: string;
 
-  @Prop({ required: false })
+  @Prop({ index: true })
   contactPhone?: string;
 }
 
-// Создаем схему
 export const UserSchema = SchemaFactory.createForClass(User);
 
-// Хэширование пароля перед сохранением
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  try {
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Метод для проверки правильности пароля
-UserSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
+UserSchema.methods.comparePassword = async function (
+  password: string,
+): Promise<boolean> {
   return bcrypt.compare(password, this.password);
 };

@@ -1,111 +1,209 @@
-import React, { useState } from 'react';
+//EditHotel.js
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const EditHotel = ({ styles }) => {
-  const [images, setImages] = useState([]);
-  const [hotelName, setHotelName] = useState('');
-  const [hotelDescription, setHotelDescription] = useState('');
-  const [roomName, setRoomName] = useState('');
-  const [roomDescription, setRoomDescription] = useState('');
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [hotelData, setHotelData] = useState({
+    name: '',
+    description: '',
+    images: []
+  });
+  const [newImages, setNewImages] = useState([]);
+  const [roomData, setRoomData] = useState({
+    name: '',
+    description: '',
+    images: []
+  });
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    setImages([...images, ...files]);
+    setNewImages([...newImages, ...files]);
   };
 
-  const handleSubmitHotel = (e) => {
+  useEffect(() => {
+    const fetchHotel = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/hotels/${id}`);
+        setHotelData(response.data);
+      } catch (error) {
+        console.error('Ошибка загрузки отеля:', error);
+        alert('Не удалось загрузить данные отеля');
+      }
+    };
+    fetchHotel();
+  }, [id]);
+
+  const handleSubmitHotel = async (e) => {
     e.preventDefault();
+    
+    if (!hotelData.name.trim() || !hotelData.description.trim()) {
+      alert('Заполните все обязательные поля');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('name', hotelData.name);
+      formData.append('description', hotelData.description);
+      
+      newImages.forEach((image) => {
+        formData.append('images', image);
+      });
+
+      await axios.put(`http://localhost:3000/hotels/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
+        }
+      });
+
+      alert('Отель успешно обновлен!');
+      navigate(`/hotel/${id}`);
+    } catch (error) {
+      console.error('Ошибка обновления:', error);
+      alert('Ошибка при обновлении отеля');
+    }
   };
 
-  const handleAddRoom = (e) => {
-    e.preventDefault();
+  const handleDeleteImage = async (imageName) => {
+    try {
+      await axios.delete(`http://localhost:3000/hotels/${id}/images`, {
+        data: { imageName },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
+        }
+      });
+      
+      setHotelData(prev => ({
+        ...prev,
+        images: prev.images.filter(img => img !== imageName)
+      }));
+    } catch (error) {
+      console.error('Ошибка удаления изображения:', error);
+    }
   };
 
-  const handleCancelHotel = () => {
-    setImages([]);
-    setHotelName('');
-    setHotelDescription('');
-  };
-
-  const handleCancelRoom = () => {
-    setRoomName('');
-    setRoomDescription('');
-  };
-
-  const isHotelFormFilled = hotelName || hotelDescription || images.length > 0;
-  const isRoomFormFilled = roomName || roomDescription;
+  const isFormFilled = hotelData.name || hotelData.description || newImages.length > 0;
 
   return (
-    <div style={styles.editHotelBlock}>
-      <h2 style={styles.h2}>Редактировать гостиницу</h2>
-      <form onSubmit={handleSubmitHotel}>
+    <div style={styles.searchBlock}>
+      <div style={styles.searchContainer}>
         <div style={styles.formGroup}>
-          <input 
-            type="text" 
-            placeholder="Название гостиницы"
-            value={hotelName}
-            onChange={(e) => setHotelName(e.target.value)}
-            style={styles.input} 
-          />
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {hotelData.images?.map((image, index) => (
+              <div key={index} style={{ position: 'relative' }}>
+                <img
+                  src={`http://localhost:3000/uploads/${image}`}
+                  alt={`hotel-${index}`}
+                  style={{ 
+                    width: '100px', 
+                    height: '100px',
+                    objectFit: 'cover',
+                    borderRadius: '4px'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDeleteImage(image)}
+                  style={{
+                    position: 'absolute',
+                    top: '5px',
+                    right: '5px',
+                    background: 'red',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
+        
+        <h3 style={styles.h2}>Добавить изображения</h3>
         <div style={styles.formGroup}>
-          <textarea 
-            placeholder="Описание гостиницы"
-            value={hotelDescription}
-            onChange={(e) => setHotelDescription(e.target.value)}
-            style={styles.textarea}
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <input 
+          <input
             type="file"
             multiple
             accept="image/*"
             onChange={handleImageUpload}
-          />
-        </div>
-        <button type="submit" style={styles.saveButton}>
-          Сохранить гостиницу
-        </button>
-        {isHotelFormFilled && (
-          <button type="button" onClick={handleCancelHotel} style={styles.cancelButton}>
-            Отменить
-          </button>
-        )}
-        {isHotelFormFilled && (
-          <button type="button" onClick={handleAddRoom} style={styles.addRoomButton}>
-            Добавить номер
-          </button>
-        )}
-      </form>
-
-      <h2 style={styles.h2}>Добавить номер</h2>
-      <form onSubmit={handleAddRoom}>
-        <div style={styles.formGroup}>
-          <input 
-            type="text"
-            placeholder="Название номера"
-            value={roomName}
-            onChange={(e) => setRoomName(e.target.value)}
             style={styles.input}
           />
         </div>
+
         <div style={styles.formGroup}>
-          <textarea 
-            placeholder="Описание номера"
-            value={roomDescription}
-            onChange={(e) => setRoomDescription(e.target.value)}
-            style={styles.textarea}
-          />
+          {newImages.length > 0 && (
+            <div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {newImages.map((img, index) => (
+                  <img
+                    key={index}
+                    src={URL.createObjectURL(img)}
+                    alt={`preview-${index}`}
+                    style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <button type="submit" style={styles.saveButton}>
-          Сохранить номер
-        </button>
-        {isRoomFormFilled && (
-          <button type="button" onClick={handleCancelRoom} style={styles.cancelButton}>
-            Отменить
-          </button>
-        )}
-      </form>
+
+        <h3 style={styles.h2}>Название отеля</h3>
+        <form onSubmit={handleSubmitHotel}>
+          <div style={styles.formGroup}>
+            <input 
+              type="text" 
+              placeholder="Название гостиницы"
+              value={hotelData.name}
+              onChange={(e) => setHotelData({ ...hotelData, name: e.target.value })}
+              style={styles.input} 
+              required
+            />
+          </div>
+
+          <h3 style={styles.h2}>Описание отеля</h3>
+          <div style={styles.formGroup}>
+            <textarea 
+              placeholder="Описание гостиницы"
+              value={hotelData.description}
+              onChange={(e) => setHotelData({ ...hotelData, description: e.target.value })}
+              style={{
+                ...styles.input,
+                height: '100px',
+                resize: 'none',
+              }}
+              required
+            />
+          </div>
+          <div style={{display: 'flex'}}>
+            <button type="submit" style={{
+              ...styles.searchButton,
+              backgroundColor: '#1AA053',
+              }}>
+              Сохранить
+            </button>
+            {isFormFilled && (
+              <button 
+              type="button" 
+              onClick={() => navigate(`/hotel/${id}`)}
+              style={{ 
+                ...styles.searchButton, 
+                backgroundColor: '#E15D5D',
+                marginLeft: '10px',
+                }}>
+                Отменить
+              </button>
+            )}
+          </div>
+        </form>
+        
+      </div>
     </div>
   );
 };

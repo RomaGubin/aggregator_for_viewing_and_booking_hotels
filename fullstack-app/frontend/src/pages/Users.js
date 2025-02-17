@@ -1,5 +1,6 @@
 //Users.js
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const UsersList = ({ styles }) => {
@@ -11,26 +12,39 @@ const UsersList = ({ styles }) => {
 
   const itemsPerPage = 20;
 
-  const fetchUsers = async (page = 1, query = '') => {
+  const fetchUsers = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/api/admin/users', {
+      const response = await axios.get('http://localhost:3000/users/admin', {
         params: {
-          offset: (page - 1) * itemsPerPage,
-          limit: itemsPerPage,
-          search: query.search || '',
+          offset: String((page - 1) * itemsPerPage),
+          limit: String(itemsPerPage),
+          search: searchQuery?.trim() || undefined,
         },
-      });
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
+        }
+      });;
 
       setUsers(response.data.users);
       setTotalPages(Math.ceil(response.data.totalCount / itemsPerPage));
     } catch (error) {
-      if (error.response.status === 401) {
-        alert('Вы не авторизованы. Пожалуйста, войдите в систему.');
-      } else if (error.response.status === 403) {
-        alert('У вас нет прав для просмотра этого списка.');
+      console.error('Ошибка получения пользователей:', error);
+      if (error.response) {
+        console.log('Статус ошибки:', error.response.status);
+        console.log('Данные ошибки:', error.response.data);
+        
+        if (error.response.status === 401) {
+          alert('Сессия истекла. Пожалуйста, войдите снова.');
+          localStorage.removeItem('jwtToken');
+          window.location.reload();
+        } else if (error.response.status === 403) {
+          alert('Недостаточно прав для просмотра списка пользователей');
+        } else {
+          alert('Ошибка сервера: ' + (error.response.data.message || 'Неизвестная ошибка'));
+        }
       } else {
-        alert('Ошибка при загрузке пользователей');
+        alert('Нет соединения с сервером');
       }
     } finally {
       setIsLoading(false);
@@ -38,17 +52,17 @@ const UsersList = ({ styles }) => {
   };
 
   useEffect(() => {
-    fetchUsers(currentPage, { search: searchQuery });
+    fetchUsers(currentPage);
   }, [currentPage, searchQuery]);
-
+  
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchUsers(1, { search: searchQuery });
+    fetchUsers(1);
   };
-
+  
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    fetchUsers(page, { search: searchQuery });
+    fetchUsers(page);
   };
 
   return (
@@ -75,7 +89,7 @@ const UsersList = ({ styles }) => {
           <div style={{ marginTop: '20px' }}>Загрузка...</div>
         ) : (
           <div style={{ marginTop: '20px' }}>
-            <div style={{ backgroundColor: '#F5F6FA' }}>
+            <div style={{ backgroundColor: '#F5F6FA', overflowX: 'auto' }}>
               <table
                 style={styles.tableUsers}
               >
@@ -88,20 +102,31 @@ const UsersList = ({ styles }) => {
                   </tr>
                 </thead>
                 <tbody>
-                {users.map((user, index) => (
-                  <tr
-                    key={user.id}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? '#fff' : '#F5F6FA',
-                    }}
-                  >
-                    <td>{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.phone}</td>
-                    <td>{user.email}</td>
-                  </tr>
-                ))}
-                          </tbody>
+                  {users.map((user, index) => (
+                    <tr
+                      key={user._id}
+                      style={{
+                        backgroundColor: index % 2 === 0 ? '#fff' : '#F5F6FA',
+                      }}
+                    >
+                      <td>
+                        <Link 
+                          to={`/user/${user._id}`} 
+                          style={{ 
+                            color: '#5D73E1', 
+                            textDecoration: 'none',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {user._id}
+                        </Link>
+                      </td>
+                      <td>{user.name}</td>
+                      <td>{user.contactPhone || 'Не указан'}</td>
+                      <td>{user.email}</td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
 

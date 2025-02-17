@@ -13,6 +13,7 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto) {
     try {
       const { email, password, name, contactPhone, role } = registerDto;
+
       return await this.authService.register({ email, password, name, contactPhone, role });
     } catch (error) {
       throw new HttpException(error.message || 'Ошибка регистрации. Попробуйте позже.', HttpStatus.BAD_REQUEST);
@@ -31,11 +32,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req) {
-    if (!req.user) {
-      throw new HttpException('Пользователь не найден.', HttpStatus.NOT_FOUND);
+    const user = await this.authService.findUserById(req.user.userId);
+    
+    if (!user) {
+      throw new HttpException('Пользователь не найден в базе.', HttpStatus.NOT_FOUND);
     }
-    return req.user;
+    return user;
   }
+
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
